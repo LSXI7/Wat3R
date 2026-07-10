@@ -22,7 +22,7 @@ Huazhong University of Science & Technology.
 
 <div align="center">
 
-<a href="https://arxiv.org/abs/2607.08772"><img src="https://img.shields.io/badge/arXiv-2412.19412-b31b1b" alt='arxiv'></a>
+<a href="https://arxiv.org/abs/2607.08772"><img src="https://img.shields.io/badge/arXiv-2607.08772-b31b1b" alt='arxiv'></a>
 <a href="https://huggingface.co/spaces/lsxi77777/Wat3R"><img src="https://img.shields.io/badge/%F0%9F%A4%97_Hugging_Face-Space-F0CD4B?labelColor=666EEE" alt='HuggingFace Space'></a>
 <a href="https://www.apache.org/licenses/LICENSE-2.0"><img src="https://img.shields.io/badge/License-Apache--2.0-929292" alt='license'></a>
 
