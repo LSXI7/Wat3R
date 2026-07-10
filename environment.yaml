@@ -1,0 +1,17 @@
+name: wat3r
+channels:
+  # - https://dx-mirrors.sensetime.com/anaconda/cloud/pytorch
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pytorch=2.3.1
+  - torchvision=0.18.1
+  - torchaudio=2.3.1
+  - pytorch-cuda=11.8
+  - pip
+  - pip:
+      - -r requirements.txt
+      - -r requirements_demo.txt

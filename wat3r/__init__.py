@@ -1,0 +1,2 @@
+"""Wat3R package."""
+

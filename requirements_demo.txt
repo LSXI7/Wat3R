@@ -1,0 +1,19 @@
+gradio==5.17.1
+viser==1.0.16
+tqdm
+hydra-core
+omegaconf
+opencv-python==4.11.0.86
+scipy
+onnxruntime
+requests
+trimesh
+matplotlib
+pandas
+pydantic==2.11.5
+open3d
+roma
+# feel free to skip the dependencies below if you do not need demo_colmap.py
+pycolmap==3.12.6
+pyceres==2.3
+git+https://github.com/jytime/LightGlue.git#egg=lightglue
