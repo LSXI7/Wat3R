@@ -255,7 +255,7 @@ class Aggregator(nn.Module):
                     raise ValueError(f"Unknown attention type: {attn_type}")
 
             for i in range(len(frame_intermediates)):
-                if iii in self.intermediate_layer_idx:  # 只对指定层进行 concat 操作
+                if iii in self.intermediate_layer_idx:
                     # print('i in', i)
                     concat_inter = torch.cat([frame_intermediates[i], global_intermediates[i]], dim=-1)
                     output_list.append(concat_inter)

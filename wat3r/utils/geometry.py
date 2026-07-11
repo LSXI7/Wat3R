@@ -90,7 +90,7 @@ def unproject_depth_map_to_point_map_bs(
     eps: float = 1e-8,
 ):
     """
-    批量版：将一批 depth maps 反投影到 world 坐标。
+    Batched depth unprojection to world coordinates.
 
     Args:
         depth_map: (B,S,H,W) or (B,S,H,W,1)
@@ -100,10 +100,10 @@ def unproject_depth_map_to_point_map_bs(
     Returns:
         world_points: (B,S,H,W,3)
         cam_points:   (B,S,H,W,3)
-        mask:         (B,S,H,W)  有效深度 mask
+        mask:         (B,S,H,W) valid depth mask
     """
 
-    # -------- 统一到 torch tensor --------
+    # Convert inputs to torch tensors.
     if isinstance(depth_map, np.ndarray):
         depth_map = torch.from_numpy(depth_map)
     if isinstance(extrinsics_cam, np.ndarray):
@@ -111,33 +111,32 @@ def unproject_depth_map_to_point_map_bs(
     if isinstance(intrinsics_cam, np.ndarray):
         intrinsics_cam = torch.from_numpy(intrinsics_cam)
 
-    # 保证都是 float
+    # Use floating point tensors.
     depth_map       = depth_map.float()
     extrinsics_cam  = extrinsics_cam.float()
     intrinsics_cam  = intrinsics_cam.float()
 
-    # 去掉最后一维 1
+    # Remove the trailing singleton channel if present.
     if depth_map.dim() == 5 and depth_map.size(-1) == 1:
         depth_map = depth_map.squeeze(-1)  # (B,S,H,W)
 
     B, S, H, W = depth_map.shape
     device = depth_map.device
 
-    # -------- 有效深度 mask --------
+    # Valid depth mask.
     mask = depth_map > eps  # (B,S,H,W)
 
     # -------- depth -> cam coords (B,S,H,W,3) --------
     cam_points = depth_to_cam_coords_points_bs(depth_map, intrinsics_cam)
 
-    # -------- 计算 cam->world 的外参逆 --------
+    # Invert cam-from-world extrinsics to get world-from-cam.
     # extrinsics_cam: cam_from_world (B,S,3,4)
-    # 我们要的是 world_from_cam
     se3 = extrinsics_cam.view(B * S, 3, 4)          # (B*S,3,4)
     se3_inv = closed_form_inverse_se3(se3)          # (B*S,4,4)
     R = se3_inv[:, :3, :3].view(B, S, 3, 3)         # (B,S,3,3)
     t = se3_inv[:, :3, 3].view(B, S, 3)             # (B,S,3)
 
-    # -------- cam -> world (矢量化) --------
+    # Vectorized camera-to-world transform.
     # cam_points: (B,S,H,W,3)
     cam_flat = cam_points.view(B, S, H * W, 3)      # (B,S,HW,3)
     # world = R * cam + t
@@ -155,7 +154,7 @@ def unproject_depth_map_to_world_point(
     eps: float = 1e-8,
 ):
     """
-    批量版：将一批 depth maps 反投影到 world 坐标。
+    Batched depth unprojection to world coordinates.
 
     Args:
         depth_map: (B,S,H,W) or (B,S,H,W,1)
@@ -165,10 +164,10 @@ def unproject_depth_map_to_world_point(
     Returns:
         world_points: (B,S,H,W,3)
         cam_points:   (B,S,H,W,3)
-        mask:         (B,S,H,W)  有效深度 mask
+        mask:         (B,S,H,W) valid depth mask
     """
 
-    # -------- 统一到 torch tensor --------
+    # Convert inputs to torch tensors.
     if isinstance(depth_map, np.ndarray):
         depth_map = torch.from_numpy(depth_map)
     if isinstance(extrinsics_cam, np.ndarray):
@@ -176,33 +175,32 @@ def unproject_depth_map_to_world_point(
     if isinstance(intrinsics_cam, np.ndarray):
         intrinsics_cam = torch.from_numpy(intrinsics_cam)
 
-    # 保证都是 float
+    # Keep all tensors on the same floating-point dtype.
     dtype = depth_map.dtype
     depth_map = depth_map.to(dtype)
     extrinsics_cam = extrinsics_cam.to(dtype)
     intrinsics_cam = intrinsics_cam.to(dtype)
-    # 去掉最后一维 1
+    # Remove the trailing singleton channel if present.
     if depth_map.dim() == 5 and depth_map.size(-1) == 1:
         depth_map = depth_map.squeeze(-1)  # (B,S,H,W)
 
     B, S, H, W = depth_map.shape
     device = depth_map.device
 
-    # -------- 有效深度 mask --------
+    # Valid depth mask.
     mask = depth_map > eps  # (B,S,H,W)
 
     # -------- depth -> cam coords (B,S,H,W,3) --------
     cam_points = depth_to_cam_coords_points_bs(depth_map, intrinsics_cam)
 
-    # -------- 计算 cam->world 的外参逆 --------
+    # Invert cam-from-world extrinsics to get world-from-cam.
     # extrinsics_cam: cam_from_world (B,S,3,4)
-    # 我们要的是 world_from_cam
     se3 = extrinsics_cam.view(B * S, 3, 4)          # (B*S,3,4)
     se3_inv = closed_form_inverse_se3(se3)          # (B*S,4,4)
     R = se3_inv[:, :3, :3].view(B, S, 3, 3)         # (B,S,3,3)
     t = se3_inv[:, :3, 3].view(B, S, 3)             # (B,S,3)
 
-    # -------- cam -> world (矢量化) --------
+    # Vectorized camera-to-world transform.
     # cam_points: (B,S,H,W,3)
     cam_flat = cam_points.view(B, S, H * W, 3)      # (B,S,HW,3)
     # world = R * cam + t
@@ -220,7 +218,7 @@ def unproject_depth_map_to_cam_point_bs(
     eps: float = 1e-8,
 ):
     """
-    批量版：将一批 depth maps 反投影到 world 坐标。
+    Batched depth unprojection to camera coordinates.
 
     Args:
         depth_map: (B,S,H,W) or (B,S,H,W,1)
@@ -228,22 +226,20 @@ def unproject_depth_map_to_cam_point_bs(
         intrinsics_cam: (B,S,3,3)
 
     Returns:
-        world_points: (B,S,H,W,3)
         cam_points:   (B,S,H,W,3)
-        mask:         (B,S,H,W)  有效深度 mask
     """
 
-    # -------- 统一到 torch tensor --------
+    # Convert inputs to torch tensors.
     if isinstance(depth_map, np.ndarray):
         depth_map = torch.from_numpy(depth_map)
     if isinstance(intrinsics_cam, np.ndarray):
         intrinsics_cam = torch.from_numpy(intrinsics_cam)
 
-    # 保证都是 float
+    # Use floating point tensors.
     depth_map       = depth_map.float()
     intrinsics_cam  = intrinsics_cam.float()
 
-    # 去掉最后一维 1
+    # Remove the trailing singleton channel if present.
     if depth_map.dim() == 5 and depth_map.size(-1) == 1:
         depth_map = depth_map.squeeze(-1)  # (B,S,H,W)
 
@@ -258,7 +254,7 @@ def depth_to_cam_coords_points_bs(
     intrinsics: torch.Tensor,    # (B,S,3,3)
 ) -> torch.Tensor:
     """
-    批量版：depth -> camera coords
+    Batched depth-to-camera-coordinate conversion.
 
     Args:
         depth_map: (B,S,H,W)
@@ -273,20 +269,20 @@ def depth_to_cam_coords_points_bs(
     device = depth_map.device
     dtype = depth_map.dtype
 
-    # 生成像素网格 (H,W)
+    # Generate the pixel grid.
     ys = torch.arange(H, device=device, dtype=dtype)
     xs = torch.arange(W, device=device, dtype=dtype)
     v, u = torch.meshgrid(ys, xs, indexing='ij')  # v: row (y), u: col (x)
     u = u.view(1, 1, H, W)  # (1,1,H,W)
     v = v.view(1, 1, H, W)
 
-    # 从 intrinsics 里取 fu, fv, cu, cv
+    # Read focal lengths and principal point from intrinsics.
     fu = intrinsics[..., 0, 0].view(B, S, 1, 1)   # (B,S,1,1)
     fv = intrinsics[..., 1, 1].view(B, S, 1, 1)
     cu = intrinsics[..., 0, 2].view(B, S, 1, 1)
     cv = intrinsics[..., 1, 2].view(B, S, 1, 1)
 
-    # 这里 u,v 会自动广播到 (B,S,H,W)
+    # u and v broadcast to (B,S,H,W).
     x_cam = (u - cu) * depth_map / fu   # (B,S,H,W)
     y_cam = (v - cv) * depth_map / fv   # (B,S,H,W)
     z_cam = depth_map                   # (B,S,H,W)

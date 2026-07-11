@@ -83,7 +83,7 @@ class UnderwaterDepthDataset(Dataset):
             items = sorted(items, key=lambda x: self._natural_key(os.path.basename(x[2])))
             self.data_list[key] = items
 
-        # ✅ 构建 index：一个 idx -> 一个 chunk
+        # Build the index table: each index maps to one chunk.
         # index item: (scene, obj, chunk_id, start, end)
         self.index = []
         total_images = 0
@@ -114,8 +114,8 @@ class UnderwaterDepthDataset(Dataset):
 
     def _get_chunk_items(self, idx):
         """
-        获取第 idx 个 batch/chunk 的 items。
-        这里和 __getitem__ 保持一致：支持 skip 和 shuffle_in_chunk。
+        Return the items for a batch/chunk index.
+        This mirrors __getitem__, including skip and shuffle_in_chunk handling.
         """
         scene, obj,chunk_id, start, end = self.index[idx]
         items = self.data_list[(scene, obj)][start:end]
@@ -134,8 +134,7 @@ class UnderwaterDepthDataset(Dataset):
 
     def save_batch_image_paths_txt(self, txt_path):
         """
-        保存一个 txt 文件：
-        每个 batch/chunk 一段，里面是该 batch 的 n 张图像路径。
+        Save one text block per batch/chunk with its image paths.
         """
         os.makedirs(os.path.dirname(txt_path) or ".", exist_ok=True)
 
@@ -157,16 +156,15 @@ class UnderwaterDepthDataset(Dataset):
         items = self.data_list[(scene, obj)][start:end]
 
         stride = self.skip + 1
-        # ✅ 1) stride 采样：skip=4 => stride=5 => 100/5=20（整除时刚好）
+        # Strided sampling: skip=4 means stride=5.
         if self.skip > 0:
             print('skip')
             items = items[::stride]
 
-        # ✅ 2) 采样后随机打乱（让每次取出的序列顺序随机）
+        # Optionally shuffle the sampled chunk.
         if self.shuffle_in_chunk and len(items) > 1:
             print('shuffle')
-            # 用 idx + torch.initial_seed() 做种子，兼容多 worker（不同 idx 也不同）
-            rng = np.random.default_rng(self.seed + idx)  # 每个 idx(块) 固定打乱，可复现
+            rng = np.random.default_rng(self.seed + idx)
             perm = rng.permutation(len(items))
             items = [items[i] for i in perm]
 
@@ -202,12 +200,11 @@ class UnderwaterDepthDataset(Dataset):
         uid = f"{scene}__{obj}__{chunk_id:05d}__{start:06d}-{end:06d}"
 
         return {
-            # "uid": uid,                 # ✅ 唯一标识（同scene/obj分块也不冲突）
-            "scene": scene_list,  # ✅ 唯一值
-            "obj": obj_list,  # ✅ 唯一值
-            # "chunk_id": chunk_id,       # ✅ 第几个块
-            # "range": (start, end),      # ✅ 在该(scene,obj)序列中的范围
-
+            # "uid": uid,
+            "scene": scene_list,
+            "obj": obj_list,
+            # "chunk_id": chunk_id,
+            # "range": (start, end),
             "depth_np": depth_np_list,  # list[np.ndarray]
             "depth_ts": depth_ts_list,  # list[torch.Tensor]
             "image_path": image_path_list,  # list[str]
@@ -224,14 +221,13 @@ class UnderwaterDepthDataset(Dataset):
 
     @staticmethod
     def _natural_key(s: str):
-        # 自然排序：按数字大小排序
+        # Natural sort key that compares embedded numbers as integers.
         parts = re.split(r'(\d+)', s)
         out = []
         for p in parts:
             out.append(int(p) if p.isdigit() else p.lower())
         return out
 
-    # ------- 你原来的均匀采样工具保持不变 -------
     def even_indices(self, L: int, k: int):
         if k >= L:
             return list(range(L))

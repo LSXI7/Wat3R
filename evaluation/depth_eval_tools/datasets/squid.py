@@ -7,10 +7,7 @@ from torch.utils.data import Dataset, DataLoader
 
 
 class UnderwaterDepthDataset(Dataset):
-    def __init__(self, gt_root, debug=False, debug2=False, no_water=False,
-                 undistort=False,
-                 debug3=False,
-                 ):
+    def __init__(self, gt_root):
         self.data_list = {}
         self.min_depth = 1e-3
         self.max_depth = 30
@@ -135,12 +132,6 @@ class UnderwaterDepthDataset(Dataset):
         # depth_right = self.threshold_depth_map(depth_right, min_percentile=2, max_percentile=98)
         depth_left = np.nan_to_num(depth_left, nan=0.)
         depth_right = np.nan_to_num(depth_right, nan=0.)
-        # 打印非NaN的数量
-        # num_valid_left = np.sum(~np.isnan(depth_left))
-        # num_valid_right = np.sum(~np.isnan(depth_right))
-        #
-        # print("左图非NaN像素数:", num_valid_left)
-        # print("右图非NaN像素数:", num_valid_right)
         depth_ts_left = torch.from_numpy(depth_left)
         depth_ts_right = torch.from_numpy(depth_right)
         valid_mask_left = self._get_valid_mask(depth_ts_left)

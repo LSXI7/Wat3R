@@ -314,13 +314,13 @@ if __name__ == '__main__':
     image_size_hw = (256, 512)
     import math
     pose_encoding = torch.tensor([[
-        # frame 0: 近似单位旋转 + 原点附近
+        # frame 0: near-identity rotation near the origin
         [ 0.00,  0.00,  1.50,   0.0,        0.0,        0.0,        1.0,         math.radians(50.0), math.radians(80.0)],
 
-        # frame 1: 绕 y 轴约 15° + 右移一点
+        # frame 1: about 15 degrees around y, translated slightly right
         [ 0.10,  0.00,  1.55,   0.0,        0.13052619, 0.0,        0.99144486,  math.radians(55.0), math.radians(85.0)],
 
-        # frame 2: 轻微 roll/pitch/yaw 混合 + 再移动一点
+        # frame 2: small mixed roll/pitch/yaw with another translation
         [ 0.20, -0.02,  1.60,  -0.06126938, 0.21169921, 0.09441385, 0.97083239,  math.radians(45.0), math.radians(75.0)],
     ]], dtype=torch.float32)
 

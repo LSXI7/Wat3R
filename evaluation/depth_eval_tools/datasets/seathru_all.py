@@ -9,8 +9,7 @@ from tqdm import tqdm
 
 class UnderwaterDepthDataset(Dataset):
     def __init__(self, gt_root,
-                 nums: int = 100,  # ✅ 新增：每份最多nums张，0/None表示不分块
-                 debug=False, debug2=False, no_water=False, undistort=False, debug3=False,
+                 nums: int = 100,
                  skip=0,
                  shuffle_in_chunk: bool = True,
                  seed: int = 42,
@@ -55,12 +54,9 @@ class UnderwaterDepthDataset(Dataset):
                 key = (scene, obj)
                 self.data_list.setdefault(key, [])
 
-                # 遍历图片
                 for root, _, files in os.walk(imgs_root):
-                    # ✅ 只处理图片文件（可按需扩展）
                     files = [f for f in files if f.lower().endswith((".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"))]
 
-                    # ✅ 按名字“自然排序”（包含数字排序）
                     files = sorted(files, key=self._natural_key)
 
                     for f in files:
@@ -78,16 +74,15 @@ class UnderwaterDepthDataset(Dataset):
                         if os.path.exists(depth_path):
                             self.data_list[key].append((scene, obj, img_path, depth_path))
 
-        # ✅ 构建“索引表”：一个 idx 对应一个 chunk
+        # Build the index table: each index maps to one chunk.
         # self.index = list of (scene, obj, start, end)
         self.index = []
         total_images = 0
 
-        # ✅ scene,obj 固定顺序
         keys = sorted(self.data_list.keys())
         for (scene, obj) in keys:
             items = self.data_list[(scene, obj)]
-            # ✅ items 内部再按 image 文件名排序（双保险：防止不同root拼接顺序影响）
+            # Sort within each group by image filename.
             items = sorted(items, key=lambda x: self._natural_key(os.path.basename(x[2])))
             self.data_list[(scene, obj)] = items
 
@@ -95,12 +90,10 @@ class UnderwaterDepthDataset(Dataset):
             total_images += n
 
             if self.nums and self.nums > 0 and n > self.nums:
-                # 分块
                 for s in range(0, n, self.nums):
                     e = min(s + self.nums, n)
                     self.index.append((scene, obj, s, e))
             else:
-                # 不分块
                 self.index.append((scene, obj, 0, n))
 
         print(
@@ -111,8 +104,8 @@ class UnderwaterDepthDataset(Dataset):
 
     def _get_chunk_items(self, idx):
         """
-        获取第 idx 个 batch/chunk 的 items。
-        这里和 __getitem__ 保持一致：支持 skip 和 shuffle_in_chunk。
+        Return the items for a batch/chunk index.
+        This mirrors __getitem__, including skip and shuffle_in_chunk handling.
         """
         scene, obj, start, end = self.index[idx]
         items = self.data_list[(scene, obj)][start:end]
@@ -131,8 +124,7 @@ class UnderwaterDepthDataset(Dataset):
 
     def save_batch_image_paths_txt(self, txt_path):
         """
-        保存一个 txt 文件：
-        每个 batch/chunk 一段，里面是该 batch 的 n 张图像路径。
+        Save one text block per batch/chunk with its image paths.
         """
         os.makedirs(os.path.dirname(txt_path) or ".", exist_ok=True)
 
@@ -155,19 +147,18 @@ class UnderwaterDepthDataset(Dataset):
             self.min_depth = 1
         else:
             self.min_depth = 1e-3
-        items = self.data_list[(scene, obj)][start:end]  # ✅ 这一份最多 nums 张
+        items = self.data_list[(scene, obj)][start:end]
 
         stride = self.skip + 1
-        # ✅ 1) stride 采样：skip=4 => stride=5 => 100/5=20（整除时刚好）
+        # Strided sampling: skip=4 means stride=5.
         if self.skip > 0:
             print('skip')
             items = items[::stride]
 
-        # ✅ 2) 采样后随机打乱（让每次取出的序列顺序随机）
+        # Optionally shuffle the sampled chunk.
         if self.shuffle_in_chunk and len(items) > 1:
             print('shuffle')
-            # 用 idx + torch.initial_seed() 做种子，兼容多 worker（不同 idx 也不同）
-            rng = np.random.default_rng(self.seed + idx)  # 每个 idx(块) 固定打乱，可复现
+            rng = np.random.default_rng(self.seed + idx)
             perm = rng.permutation(len(items))
             items = [items[i] for i in perm]
 
@@ -179,7 +170,6 @@ class UnderwaterDepthDataset(Dataset):
         depth_path_list = []
         valid_mask_list = []
 
-        # tqdm 建议只在调试用；训练会很慢
         for scene_i, obj_i, img_path, depth_path in tqdm(items, desc="Processing", total=len(items)):
             depth = Image.open(depth_path)
             depth_np = np.array(depth, dtype=np.float32)
@@ -208,14 +198,13 @@ class UnderwaterDepthDataset(Dataset):
         return torch.logical_and((depth > self.min_depth), (depth < self.max_depth)).bool()
 
     def create_dataloader(self, batch_size=1, num_workers=0):
-        # ✅ 由于每个chunk长度可能不同，建议 batch_size=1
+        # Chunks may have different lengths, so batch_size=1 is recommended.
         return DataLoader(self, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
     @staticmethod
     def _natural_key(s: str):
         """
-        自然排序 key：把字符串中的数字提取出来按 int 排序
-        例：T_S02951.png < T_S02952.png；T_S9.png < T_S10.png
+        Natural sort key that compares embedded numbers as integers.
         """
         parts = re.split(r'(\d+)', s)
         out = []

@@ -72,7 +72,7 @@ class CameraHead(nn.Module):
 
     @property
     def device(self):
-        # 先尝试从参数拿设备；没有参数时再从 buffer 拿
+        # Prefer parameter device; fall back to buffer device for parameter-free modules.
         try:
             return next(self.parameters()).device
         except StopIteration:

@@ -6,24 +6,13 @@ from torch.utils.data import Dataset, DataLoader
 
 
 class UnderwaterDepthDataset(Dataset):
-    def __init__(self, gt_root, debug=False, debug2=False, no_water=False,
-                 undistort=False,
-                 debug3=False):
+    def __init__(self, gt_root):
         self.data_list = {}
         self.min_depth = 1e-3
         self.max_depth = 30
-        self.debug = debug
-        self.debug2 = debug2
-        self.debug3 = debug3
         self.disp_name = 'FLSea_VI'
         self.filename_ls_path = gt_root
 
-        ########### 畸变系数 ##########
-
-        ## 参数1 calibration
-        # TODO: 暂时不管
-
-        self.no_water = no_water
         for scene in os.listdir(gt_root):
             scene_root = os.path.join(gt_root, scene)
             if not os.path.isdir(scene_root):
@@ -34,11 +23,7 @@ class UnderwaterDepthDataset(Dataset):
                     continue
                 self.data_list[f'{obj}'] = []
                 obj_root = os.path.join(scene_root, obj)
-                if not self.no_water:
-                    imgs_root = os.path.join(obj_root, "imgs")
-
-                else:
-                    imgs_root = os.path.join(obj_root, "seaErra")
+                imgs_root = os.path.join(obj_root, "imgs")
                 depth_root = os.path.join(obj_root, "depth")
                 if not os.path.isdir(imgs_root) or not os.path.isdir(depth_root):
                     print('no file in {}'.format(obj))
@@ -55,7 +40,6 @@ class UnderwaterDepthDataset(Dataset):
 
                         new_filename = f"{name}_SeaErra_abs_depth.tif"
 
-                        # 拼接完整 depth_path
                         depth_path = os.path.join(depth_root, rel_dir, new_filename)
                         # print('depth_path',depth_path)
                         if os.path.exists(depth_path):
@@ -66,14 +50,6 @@ class UnderwaterDepthDataset(Dataset):
         keys = list(self.data_list.keys())
         for obj in keys:
             items = sorted(self.data_list[f'{obj}'])
-            if self.debug and not self.debug2:
-                k = 10
-                items = self.even_sample(items, k)
-            elif (not self.debug) and self.debug2:
-                k = 100
-                items = self.even_sample(items, k)
-            else:
-                items = items
 
             nums_to_detect = len(items)
 
@@ -142,8 +118,8 @@ class UnderwaterDepthDataset(Dataset):
 
     def even_indices(self, L: int, k: int):
         """
-        返回长度为 L 的序列里，尽量均匀分布的 k 个下标（覆盖首尾）。
-        不会越界；k >= L 时返回所有下标。
+        Return k approximately evenly spaced indices from a sequence of length L,
+        including the endpoints when possible.
         """
         if k >= L:
             return list(range(L))
@@ -151,7 +127,6 @@ class UnderwaterDepthDataset(Dataset):
             return []
         if k == 1:
             return [L // 2]
-        # 覆盖首尾：i in [0, k-1] 映射到 [0, L-1]
         return [round(i * (L - 1) / (k - 1)) for i in range(k)]
 
     def even_sample(self, seq, k):

@@ -40,7 +40,7 @@ def img_from_cam_np(
     ones = np.ones_like(uv[:, :1, :])  # (B,1,N)
     points_cam_h = np.concatenate([uv, ones], axis=1)  # (B,3,N)
 
-    # batched mat-mul: K · [u v 1]ᵀ
+    # Batched matrix multiplication: K @ [u, v, 1]^T.
     points2D_h = np.einsum("bij,bjk->bik", intrinsics, points_cam_h)  # (B,3,N)
     points2D = np.nan_to_num(points2D_h[:, :2, :], nan=default)  # (B,2,N)
 
@@ -85,8 +85,8 @@ def project_3D_points_np(
     points3D_h_B = np.broadcast_to(points3D_h, (B, N, 4))  # (B,N,4)
 
     # ----- 2. apply extrinsics  (camera frame) ------------------------------
-    # X_cam = E · X_hom
-    # einsum:  E_(b i j)  ·  X_(b n j)  →  (b n i)
+    # X_cam = E @ X_hom.
+    # einsum maps E_(b i j) and X_(b n j) to (b n i).
     points_cam = np.einsum("bij,bnj->bni", extrinsics, points3D_h_B)  # (B,N,3)
     points_cam = points_cam.transpose(0, 2, 1)  # (B,3,N)
 

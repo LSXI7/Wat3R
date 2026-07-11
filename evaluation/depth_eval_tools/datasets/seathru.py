@@ -6,19 +6,12 @@ from torch.utils.data import Dataset, DataLoader
 
 
 class UnderwaterDepthDataset(Dataset):
-    def __init__(self, gt_root, debug=False, debug2=False, no_water=False,
-                 undistort=False,
-                 debug3=False):
+    def __init__(self, gt_root):
         self.data_list = {}
         self.min_depth = 1e-3
         self.max_depth = 30
         self.disp_name = 'seathru'
         self.filename_ls_path = gt_root
-
-        ########### 畸变系数 ##########
-
-        ## 参数1 calibration
-        # TODO: 暂时不管
 
         for scene in os.listdir(gt_root):
             scene_root = os.path.join(gt_root, scene)
@@ -52,7 +45,6 @@ class UnderwaterDepthDataset(Dataset):
                         new_filename = os.path.join('depth' + name + '.tif')
                         # LFT_3416.png-->depthLFT_3416.tif
 
-                        # 拼接完整 depth_path
                         depth_path = os.path.join(depth_root, rel_dir, new_filename)
                         # print('depth_path',depth_path)
                         if os.path.exists(depth_path):
@@ -76,23 +68,6 @@ class UnderwaterDepthDataset(Dataset):
     def __len__(self):
         return self.all_to_test
 
-    # def even_indices(self, L: int, k: int):
-    #     """
-    #     返回长度为 L 的序列里，尽量均匀分布的 k 个下标（覆盖首尾）。
-    #     不会越界；k >= L 时返回所有下标。
-    #     """
-    #     if k >= L:
-    #         return list(range(L))
-    #     if k <= 0:
-    #         return []
-    #     if k == 1:
-    #         return [L // 2]
-    #     # 覆盖首尾：i in [0, k-1] 映射到 [0, L-1]
-    #     return [round(i * (L - 1) / (k - 1)) for i in range(k)]
-    #
-    # def even_sample(self, seq, k):
-    #     idx = self.even_indices(len(seq), k)
-    #     return [seq[i] for i in idx]
     def threshold_depth_map(self,
                             depth_map: np.ndarray,
                             max_percentile: float = 99,
@@ -160,7 +135,6 @@ class UnderwaterDepthDataset(Dataset):
         # img = torch.from_numpy(np.array(img)).permute(2,0,1).float() / 255.0
         #
         depth = Image.open(depth_path)
-        print(depth.mode)  # 输出图像模式
         depth = np.array(depth, dtype=np.float32)
         depth = self.threshold_depth_map(depth, min_percentile=5, max_percentile=-1)
         depth_ts = torch.from_numpy(depth)
