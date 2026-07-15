@@ -14,6 +14,8 @@ Wat3R-1B
 *.txt
 !requirements.txt
 !requirements_demo.txt
+!requirment_train.txt
+!training/requirements_train.txt
 *.png
 *.jpg
 *.jgz
@@ -25,6 +27,10 @@ Wat3R-1B
 # C extensions
 *.so
 training/result
+training/debug/result
+debug/result
+training/datasets/*
+!training/datasets/.gitkeep
 
 # Distribution / packaging
 .Python

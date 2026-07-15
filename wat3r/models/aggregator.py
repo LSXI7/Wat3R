@@ -69,18 +69,14 @@ class Aggregator(nn.Module):
             qk_norm=True,
             rope_freq=100,
             init_values=0.01,
-            # save_memory=True,
     ):
         super().__init__()
 
         self.__build_patch_embed__(patch_embed, img_size, patch_size, num_register_tokens, embed_dim=embed_dim)
-        # self.enable_water_encoder = enable_water_encoder
         # Initialize rotary position embedding if frequency > 0
         self.rope = RotaryPositionEmbedding2D(frequency=rope_freq) if rope_freq > 0 else None
         self.position_getter = PositionGetter() if self.rope is not None else None
-        # if save_memory:
         self.intermediate_layer_idx = [4, 11, 17, 23]
-        # self.save_memory = save_memory
         self.frame_blocks = nn.ModuleList(
             [
                 block_fn(

@@ -25,6 +25,8 @@ Huazhong University of Science & Technology.
 <a href="https://arxiv.org/abs/2607.08772"><img src="https://img.shields.io/badge/arXiv-2607.08772-b31b1b" alt='arxiv'></a>
 <a href="https://huggingface.co/spaces/lsxi77777/Wat3R"><img src="https://img.shields.io/badge/%F0%9F%A4%97_Hugging_Face-Space-F0CD4B?labelColor=666EEE" alt='HuggingFace Space'></a>
 <a href="https://www.apache.org/licenses/LICENSE-2.0"><img src="https://img.shields.io/badge/License-Apache--2.0-929292" alt='license'></a>
+<a href="https://openxlab.org.cn/datasets/lsxi7/Water3D"><img src="https://img.shields.io/badge/OpenXLab-Dataset-blue" alt='data'></a>
+<a href="https://huggingface.co/datasets/lsxi77777/Water3D"><img src="https://img.shields.io/badge/%F0%9F%A4%97_Hugging_Face-Dataset-F0CD4B?labelColor=666EEE" alt='HuggingFace Space'></a>
 
 </div>
 
@@ -34,6 +36,8 @@ Huazhong University of Science & Technology.
 
 ## 📣 News
 
+- **[15/Jul/2026]** [Wat3R Training Code](./training/README.md) is released.
+- **[15/Jul/2026]** [Water3D Dataset](https://huggingface.co/datasets/lsxi77777/Water3D) is released.
 - **[10/Jul/2026]** Our Wat3R is accepted to ECCV 2026.
 - **[10/Jul/2026]** Release the code and checkpoint.
 
@@ -126,16 +130,43 @@ The Viser demo supports static and dynamic visualization.
 python demo_viser.py  --input examples/images  --checkpoint /path/to/wat3r.pt --mode static # or dynamic
 ```
 
+## Water3D Dataset
+
+We introduce **Water3D**, an underwater 3D dataset covering diverse water bodies and underwater scenes.
+It is used in this repository for evaluating underwater depth estimation, camera pose estimation, and point-cloud reconstruction.
+
+The Water3D Dataset is uploaded to [OpenXLab](https://openxlab.org.cn/datasets/lsxi7/Water3D) and [Hugging Face](https://huggingface.co/datasets/lsxi77777/Water3D).
+
+<p align="center">
+  <img src="assets/dataset_vis.png" alt="Water3D dataset visualization" height="430">
+</p>
+
+Each scene should contain the image sequence and COLMAP reconstruction outputs used by the evaluation code:
+
+```text
+water3D/
+└── <scene>/
+    ├── images/
+    └── output/
+        ├── sparse/
+        ├── stereo/depth_maps/
+        └── fused.ply
+```
+
 ## Benchmark Evaluation
 See [Evaluation](./evaluation/README.md) for details.
+
+## Training
+
+See [Training](./training/README.md) for details.
 
 ## TODO List
 
 
 - [x] Underwater Evaluation Benchmark
 - [x] Online Demo
-- [ ] Water3D Dataset
-- [ ] Training Code
+- [x] Water3D Dataset
+- [x] Training Code
 
 
 
