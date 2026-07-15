@@ -1,0 +1,317 @@
+exp_name: wat3r
+img_size: 518
+patch_size: 14
+num_workers: 8
+seed_value: 42
+accum_steps: 1
+val_epoch_freq: 1
+max_img_per_gpu: 12
+max_epochs: 24
+limit_train_batches: 800
+limit_val_batches: 10
+log_save_dir: wat3r
+data_root: datasets
+
+data:
+  train:
+    _target_: training.data.dynamic_dataloader.DynamicTorchDataset
+    num_workers: ${num_workers}
+    max_img_per_gpu: ${max_img_per_gpu}
+    shuffle: true
+    pin_memory: false
+    common_config:
+      fix_img_num: -1
+      fix_aspect_ratio: 1.0
+      training: true
+      inside_random: true
+      img_size: ${img_size}
+      patch_size: ${patch_size}
+      rescale: true
+      rescale_aug: true
+      landscape_check: false
+      debug: false
+      get_nearby: true
+      load_depth: true
+      img_nums: [2, 12]
+      no_label_data_probability: 0.25
+      only_depth_label_dataset_probability: 0
+      max_img_per_gpu: ${max_img_per_gpu}
+      allow_duplicate_img: true
+      repeat_batch: false
+      augs:
+        cojitter: true
+        different: true
+        cojitter_ratio: 1
+        scales: [0.8, 1.2]
+        aspects: [0.33, 1.0]
+        color_jitter:
+          brightness: 0.5
+          contrast: 0.5
+          saturation: 0.5
+          hue: 0.1
+          p: 0.8
+        gray_scale:
+          apply: true
+          p: 0.2
+        gau_blur:
+          apply: true
+          p: 0.2
+    dataset:
+      _target_: training.data.composed_dataset.ComposedDataset
+      dataset_configs:
+        - _target_: training.data.datasets.real_video_data.RealVideoDataset
+          split: train
+          FLSEA_VI_DIR: ${data_root}/flsea_vi
+          ONLINE_VIDEO_DIR: ${data_root}/online_video
+          expand_ratio: 2
+        - _target_: training.data.datasets.megadepth.MegadepthDataset
+          split: train
+          MEGADEPTH_DIR: ${data_root}/megadepth_processed
+          MEGADEPTH_META_PATH: ${data_root}/megadepth_metadata.npz
+          MEGADEPTH_FAKE_DEPTH_DIR: ${data_root}/megadepth_fake_depth_da3
+        - _target_: training.data.datasets.tartanair_ocean.TartanairOceanDataset
+          split: train
+          TARTANAIR_OCEAN_DIR: ${data_root}/tartanair_ocean
+          expand_ratio: 2
+        - _target_: training.data.datasets.hypersim.HypersimDataset
+          split: train
+          HYPERSIM_DIR: ${data_root}/hypersim
+          HYPERSIM_CAMERA_CSV: ${data_root}/hypersim_camera_parameters.csv
+        - _target_: training.data.datasets.vkitti.VKittiDataset
+          split: train
+          VKitti_DIR: ${data_root}/virtual_kitti
+          VKITTI_FAKE_DEPTH_DIR: ${data_root}/virtual_kitti_fake_depth_da3
+
+  val:
+    _target_: training.data.dynamic_dataloader.DynamicTorchDataset
+    num_workers: ${num_workers}
+    max_img_per_gpu: ${max_img_per_gpu}
+    shuffle: true
+    pin_memory: false
+    common_config:
+      fix_img_num: -1
+      fix_aspect_ratio: 1.0
+      training: false
+      inside_random: true
+      img_size: ${img_size}
+      patch_size: ${patch_size}
+      rescale: true
+      rescale_aug: false
+      landscape_check: false
+      debug: false
+      get_nearby: true
+      load_depth: true
+      img_nums: [2, 12]
+      no_label_data_probability: 0
+      only_depth_label_dataset_probability: 0
+      allow_duplicate_img: true
+      repeat_batch: false
+      augs:
+        cojitter: false
+        different: false
+        cojitter_ratio: 0.5
+        scales: null
+        aspects: [1.0, 1.0]
+        color_jitter: null
+        gray_scale:
+          apply: false
+          p: 0
+        gau_blur:
+          apply: false
+          p: 0
+    dataset:
+      _target_: training.data.composed_dataset.ComposedDataset
+      dataset_configs:
+        - _target_: training.data.datasets.megadepth.MegadepthDataset
+          split: test
+          MEGADEPTH_DIR: ${data_root}/megadepth_processed
+          MEGADEPTH_META_PATH: ${data_root}/megadepth_metadata.npz
+          MEGADEPTH_FAKE_DEPTH_DIR: ${data_root}/megadepth_fake_depth_da3
+
+logging:
+  log_dir: result/${log_save_dir}
+  log_visuals: false
+  log_freq: 1
+  log_level_primary: DEBUG
+  log_level_secondary: WARNING
+  all_ranks: false
+  tensorboard_writer:
+    _target_: training.train_utils.wandb_logger.WandbLogger
+    path: ${logging.log_dir}/wandb_log
+    project: ${log_save_dir}
+    name: "${now:%Y%m%d-%H%M%S}"
+    mode: online
+    entity: null
+    group: null
+    tags: ["wat3r-train"]
+    config:
+      max_epochs: ${max_epochs}
+      img_size: ${img_size}
+      patch_size: ${patch_size}
+  # Alternative local TensorBoard logger:
+  # tensorboard_writer:
+  #   _target_: training.train_utils.tb_writer.TensorBoardLogger
+  #   path: ${logging.log_dir}/tensorboard
+  scalar_keys_to_log:
+    train:
+      keys_to_log:
+        - loss_objective
+        - loss_camera
+        - loss_T
+        - loss_R
+        - loss_FL
+        - loss_conf_depth
+        - loss_reg_depth
+        - loss_grad_depth
+        - loss_conf_point
+        - loss_reg_point
+        - loss_grad_point
+        - ema_loss_objective
+        - ema_loss_camera
+        - ema_loss_T
+        - ema_loss_R
+        - ema_loss_FL
+        - ema_loss_conf_depth
+        - ema_loss_reg_depth
+        - ema_loss_grad_depth
+        - ema_loss_conf_point
+        - ema_loss_reg_point
+        - ema_loss_grad_point
+        - ema_loss_static_geo
+        - ema_loss_conf_static_geo
+        - ema_loss_grad_static_geo
+        - ema_loss_reg_static_geo
+    val:
+      keys_to_log:
+        - loss_objective
+        - loss_camera
+        - loss_T
+        - loss_R
+        - loss_FL
+        - loss_conf_depth
+        - loss_reg_depth
+        - loss_grad_depth
+        - loss_conf_point
+        - loss_reg_point
+        - loss_grad_point
+
+checkpoint:
+  save_dir: result/${log_save_dir}/${exp_name}/ckpts
+  save_freq: 50
+  resume_checkpoint_path: /path/to/vggt.pt
+  strict: false
+
+loss:
+  _target_: training.loss.MultitaskLoss
+  static_loss: teacher
+  camera:
+    weight: 5.0
+    loss_type: l1
+  depth:
+    weight: 1.0
+    gradient_loss_fn: grad
+    valid_range: 0.98
+  point:
+    weight: 1.0
+    gradient_loss_fn: normal
+    valid_range: 0.98
+  ema:
+    type: ema_loss
+    weight: 0.5
+    loss_type: l1
+
+optim:
+  param_group_modifiers: false
+  optimizer:
+    _target_: torch.optim.AdamW
+    lr: 5e-5
+    weight_decay: 0.05
+  frozen_module_names:
+  amp:
+    enabled: true
+    amp_dtype: bfloat16
+  gradient_clip:
+    _target_: training.train_utils.gradient_clip.GradientClipper
+    configs:
+      - module_name: ["aggregator"]
+        max_norm: 1.0
+        norm_type: 2
+      - module_name: ["depth"]
+        max_norm: 1.0
+        norm_type: 2
+      - module_name: ["camera"]
+        max_norm: 1.0
+        norm_type: 2
+      - module_name: ["point"]
+        max_norm: 1.0
+        norm_type: 2
+  options:
+    lr:
+      - param_names: ["aggregator.*"]
+        scheduler:
+          _target_: fvcore.common.param_scheduler.CompositeParamScheduler
+          schedulers:
+            - _target_: fvcore.common.param_scheduler.LinearParamScheduler
+              start_value: 1e-8
+              end_value: 5e-6
+            - _target_: fvcore.common.param_scheduler.CosineParamScheduler
+              start_value: 5e-6
+              end_value: 1e-8
+          lengths: [0.05, 0.95]
+          interval_scaling: ["rescaled", "rescaled"]
+      - scheduler:
+          _target_: fvcore.common.param_scheduler.CompositeParamScheduler
+          schedulers:
+            - _target_: fvcore.common.param_scheduler.LinearParamScheduler
+              start_value: 1e-8
+              end_value: 5e-5
+            - _target_: fvcore.common.param_scheduler.CosineParamScheduler
+              start_value: 5e-5
+              end_value: 1e-8
+          lengths: [0.05, 0.95]
+          interval_scaling: ["rescaled", "rescaled"]
+    weight_decay:
+      - scheduler:
+          _target_: fvcore.common.param_scheduler.ConstantParamScheduler
+          value: 0.05
+
+model:
+  _target_: wat3r.models.wat3r.Wat3R
+  img_size: ${img_size}
+  patch_size: ${patch_size}
+  enable_camera: true
+  enable_depth: true
+  enable_point: true
+  enable_track: false
+  enable_ema: true
+  ema:
+    use_label: extrinsics
+    use_buffers: false
+    use_for_eval: false
+    momentum: 0.996
+    momentum_schedule: constant
+    update_every: 1
+    start_unlabel: 6400
+    start_ema: 500
+    enable_no_label_up: true
+    enable_64: true
+    global_rotation: true
+    enable_static_mask: true
+    static_mask_visibility_tolerance: 2
+    static_mask_relative_depth_threshold: 0.05
+    static_mask_boundary: 4
+    static_mask_use_foreground: true
+
+distributed:
+  backend: nccl
+  comms_dtype: None
+  find_unused_parameters: false
+  timeout_mins: 30
+  gradient_as_bucket_view: true
+  bucket_cap_mb: 25
+  broadcast_buffers: true
+
+cuda:
+  cudnn_deterministic: false
+  cudnn_benchmark: false
+  allow_tf32: true

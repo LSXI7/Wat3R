@@ -1,0 +1,14 @@
+# Install Wat3R first from the repository root:
+#   pip install -e .
+#
+# Torch/torchvision should be installed by the conda environment or with the
+# CUDA version that matches your machine.
+
+hydra-core
+omegaconf
+iopath
+fvcore
+wandb
+wcmatch
+h5py
+tensorboard
