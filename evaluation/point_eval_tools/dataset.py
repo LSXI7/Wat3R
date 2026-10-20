@@ -240,9 +240,9 @@ class Water3DManyViewDataset:
             if self.scene_filter and scene_name not in self.scene_filter:
                 continue
 
-            image_dir = scene_root / "images"
-            if not image_dir.is_dir():
-                image_dir = scene_root / "output" / "images"
+            # image_dir = scene_root / "images"
+            # if not image_dir.is_dir():
+            image_dir = scene_root / "output" / "images"
             depth_dir = scene_root / "output" / "stereo" / "depth_maps"
             recon_dir = scene_root / "output" / "sparse"
             if not image_dir.is_dir() or not depth_dir.is_dir() or not recon_dir.is_dir():
